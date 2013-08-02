@@ -2,7 +2,7 @@
   "ruby": {
     "version": "1.9.3-p448",
     "file": "ruby-1.9.3-p448.tar.gz",
-    "url": "http://neptune.puppetlabs.lan/sources/ruby-1.9.3-p448.tar.gz",
+    "url": "http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p448.tar.gz",
     "md5": "a893cff26bcf351b8975ebf2a63b1023"
   }
 }
