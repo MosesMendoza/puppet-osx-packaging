@@ -2,6 +2,11 @@
 
 namespace :ruby do
   task :build => :setup do
+    cd File.join(@workdir, "ruby-#{@version}") do
+      sh "./configure --prefix=/opt/puppet"
+      sh "make"
+      sh "make install"
+    end
   end
 
   task :setup => :verify do
@@ -27,5 +32,4 @@ namespace :ruby do
     @url      = @info["url"]
     @md5      = @info["md5"]
   end
-
 end
