@@ -15,6 +15,15 @@ require 'digest'
 load File.join(RAKE_ROOT, 'utility_methods.rb')
 load File.join(RAKE_ROOT, "ruby", "build.rake")
 
+
+
+desc "Remove downloaded and built files"
+task :clean do
+  [PREFIX, CONFDIR, File.join(RAKE_ROOT, "bom")].each do |f|
+    rm_rf f
+  end
+end
+
 # Tasks for building the various components of the stack
 desc "Build All"
 task :all => :ruby
