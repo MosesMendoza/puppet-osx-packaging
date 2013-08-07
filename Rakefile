@@ -32,7 +32,6 @@ task :all => :ruby
 desc "Build ruby"
 task :ruby => [:setup, "ruby:build", "bom/ruby.post.list", "bom/ruby.lst"]
 
-desc "Setup work dir"
 task :setup do
   mkdir_p workdir
   @packages = JSON.load(File.read(PACKAGES))
