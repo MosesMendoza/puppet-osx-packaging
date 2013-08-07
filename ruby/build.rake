@@ -22,7 +22,7 @@ namespace :ruby do
 
   task :retrieve => :info do
     rm_f @file
-    sh "wget #{@url}"
+    sh "wget #{@url} -P #{SOURCES}"
   end
 
   task :info do

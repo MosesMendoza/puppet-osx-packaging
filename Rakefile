@@ -6,6 +6,7 @@
 
 RAKE_ROOT = File.dirname(__FILE__)
 PACKAGES = File.join(RAKE_ROOT, 'packages.json')
+SOURCES = File.join(RAKE_ROOT, "sources")
 PREFIX = "/opt/puppet"
 CONFDIR = "/etc/puppetlabs"
 
@@ -19,8 +20,8 @@ load File.join(RAKE_ROOT, "ruby", "build.rake")
 
 desc "Remove downloaded and built files"
 task :clean do
-  [PREFIX, CONFDIR, File.join(RAKE_ROOT, "bom")].each do |f|
-    rm_rf f
+  [PREFIX, CONFDIR, SOURCES, File.join(RAKE_ROOT, "bom")].each do |f|
+    rm_rf Dir["#{f}/*"]
   end
 end
 
@@ -29,7 +30,7 @@ desc "Build All"
 task :all => :ruby
 
 desc "Build ruby"
-task :ruby => [:setup, "ruby:build", "bom/ruby.post.list"]
+task :ruby => [:setup, "ruby:build", "bom/ruby.post.list", "bom/ruby.lst"]
 
 desc "Setup work dir"
 task :setup do
@@ -42,18 +43,14 @@ namespace :bom do
   # get the newly installed files.
   rule '.list' do |t|
     sh %[ echo > #{t.name};
-      for i in #{PREFIX} /etc/puppet #{CONFDIR};
+      for i in #{PREFIX} #{CONFDIR};
       do
         [ -d $i ] && find $i \\! -type d -print;
       done | sort >> #{t.name}]
   end
 
-  rule '.lst' => ['.o.list', '.f.list'] do |t|
-    sh %[comm -23 #{t.name.sub('.lst','.f.list')} #{t.name.sub('.lst','.o.list')} > #{t.name}]
+  rule '.lst' do |t|
+    sh %[comm -23 #{t.name.sub('.lst','.post.list')} #{t.name.sub('.lst','.pre.list')} > #{t.name}]
   end
 
-  desc "Create bom/ruby.lst (for tar -T)"
-  task :'ruby' => "bom/ruby.lst" do
-    puts "bom/ruby.lst created!"
-  end
 end
