@@ -26,7 +26,8 @@ namespace :ruby do
   end
 
   task :info do
-    @info     = @packages["ruby"]
+    @name     = "ruby"
+    @info     = @packages[@name]
     @file     = @info["file"]
     @version  = @info["version"]
     @url      = @info["url"]

@@ -5,11 +5,12 @@
 #                 packages-specific build tasks under their respective directories
 
 RAKE_ROOT = File.dirname(__FILE__)
-PACKAGES = File.join(RAKE_ROOT, 'packages.json')
-SOURCES = File.join(RAKE_ROOT, "sources")
-PREFIX = "/opt/puppet"
-CONFDIR = "/etc/puppetlabs"
-TAR = %x{which tar}.chomp
+PACKAGES  = File.join(RAKE_ROOT, 'packages.json')
+SOURCES   = File.join(RAKE_ROOT, "sources")
+PREFIX    = "/opt/puppet"
+CONFDIR   = "/etc/puppetlabs"
+TAR       = %x{which tar}.chomp
+PKGBUILD  = %x{which pkgbuild}.chomp
 
 require 'json'
 require 'digest'
@@ -31,7 +32,24 @@ desc "Build All"
 task :all => :ruby
 
 desc "Build ruby"
-task :ruby => [:setup, "ruby:build", "bom/ruby.post.list", "bom/ruby.lst", "tar/ruby.tar"]
+task :ruby => [:tree, "ruby:build", "bom/ruby.post.list", "bom/ruby.lst", "ruby.tar", "ruby.root", "ruby.pkg"]
+
+# description: This task sets up the directory tree structure that packagemaker
+#              needs to build a package. A prototype.plist file (holding
+#              package-specific options) is built from an ERB template located
+#              in the project directory
+task :tree => :setup do
+  @working_tree  = {
+     'scripts'   => "#{workdir}/scripts",
+     'resources' => "#{workdir}/resources",
+     'working'   => "#{workdir}/root",
+     'payload'   => "#{workdir}/payload",
+  }
+  @working_tree.each_value do |val|
+    mkdir_p(val)
+  end
+end
+
 
 task :setup do
   mkdir_p workdir
@@ -55,12 +73,36 @@ namespace :bom do
 
 end
 
-namespace :tar do
-  # Create a tarball of the built files from the .lst
-  rule '.tar' do |t|
-    name = t.name.split(':')[1]
-    puts "Creating #{name}"
-    sh %[ #{TAR} -T bom/#{name.sub('.tar','.lst')} -czf #{File.join(workdir, "#{name}.gz")} ]
+# Create a tarball of the built files from the .lst
+rule '.tar' do |t|
+  puts "Creating #{t.name}.gz"
+  sh %[ #{TAR} -T bom/#{t.name.sub('.tar','.lst')} -czf #{File.join(workdir, "#{t.name}.gz")} ]
+end
+
+# Unpack the tarball into a root to package up
+rule '.root' do |t|
+  puts "Unpacking into #{workdir}/root"
+  cd workdir do
+    sh %[ #{TAR} -xzf #{t.name.sub('.root','.tar.gz')} -C root ]
   end
 end
 
+rule 'erb' do |t|
+  puts "Generating Info.plist file"
+  cd workdir do
+    erb(File.join(RAKE_ROOT, 'prototype.plist.erb'), 'prototype.plist')
+  end
+end
+
+rule 'pkg' do |t|
+  name = t.name.split('.')[0]
+  cd workdir do
+    sh %[ sudo #{PKGBUILD} --root root \
+      --scripts scripts \
+      --identifier com.puppetlabs.#{name} \
+      --version #{@version} \
+      --install-location / \
+      --ownership-preserve \
+      payload/#{name}.pkg ]
+  end
+end

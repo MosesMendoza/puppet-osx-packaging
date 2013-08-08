@@ -1,0 +1,46 @@
+<%
+@package_major_version = @version.split('.')[0]
+@package_minor_version = @version.split('.')[1] +
+                         @version.split('.')[2].split('-')[0].split('rc')[0]
+@build_date            = Time.new.strftime("%Y-%m-%dT%H:%M:%SZ")
+@reverse_domain        = "com.puppetlabs.#{@name}"
+@title                 = "#{@name}-#{@version}"
+%>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string><%= @title %></string>
+	<key>CFBundleShortVersionString</key>
+	<string><%= @version %></string>
+	<key>IFMajorVersion</key>
+	<integer><%= @package_major_version %></integer>
+	<key>IFMinorVersion</key>
+	<integer><%= @package_minor_version %></integer>
+	<key>IFPkgBuildDate</key>
+	<date><%= @build_date %></date>
+	<key>IFPkgFlagAllowBackRev</key>
+	<false/>
+	<key>IFPkgFlagAuthorizationAction</key>
+	<string>RootAuthorization</string>
+	<key>IFPkgFlagDefaultLocation</key>
+	<string>/</string>
+	<key>IFPkgFlagFollowLinks</key>
+	<true/>
+	<key>IFPkgFlagInstallFat</key>
+	<false/>
+	<key>IFPkgFlagIsRequired</key>
+	<false/>
+	<key>IFPkgFlagOverwritePermissions</key>
+	<false/>
+	<key>IFPkgFlagRelocatable</key>
+	<false/>
+	<key>IFPkgFlagRestartAction</key>
+	<string>None</string>
+	<key>IFPkgFlagRootVolumeOnly</key>
+	<true/>
+	<key>IFPkgFlagUpdateInstalledLanguages</key>
+	<false/>
+</dict>
+</plist>
