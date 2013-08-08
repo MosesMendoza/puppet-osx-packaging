@@ -9,6 +9,7 @@ PACKAGES = File.join(RAKE_ROOT, 'packages.json')
 SOURCES = File.join(RAKE_ROOT, "sources")
 PREFIX = "/opt/puppet"
 CONFDIR = "/etc/puppetlabs"
+TAR = %x{which tar}.chomp
 
 require 'json'
 require 'digest'
@@ -30,7 +31,7 @@ desc "Build All"
 task :all => :ruby
 
 desc "Build ruby"
-task :ruby => [:setup, "ruby:build", "bom/ruby.post.list", "bom/ruby.lst"]
+task :ruby => [:setup, "ruby:build", "bom/ruby.post.list", "bom/ruby.lst", "tar/ruby.tar"]
 
 task :setup do
   mkdir_p workdir
@@ -53,3 +54,13 @@ namespace :bom do
   end
 
 end
+
+namespace :tar do
+  # Create a tarball of the built files from the .lst
+  rule '.tar' do |t|
+    name = t.name.split(':')[1]
+    puts "Creating #{name}"
+    sh %[ #{TAR} -T bom/#{name.sub('.tar','.lst')} -czf #{File.join(workdir, "#{name}.gz")} ]
+  end
+end
+
