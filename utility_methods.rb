@@ -11,3 +11,11 @@ def untar(file, outdir=nil)
   c = "-C #{outdir}" if outdir
   sh "tar -xf #{file} #{c}"
 end
+
+def erb(erbfile, outfile)
+  template = File.read(erbfile)
+  message  = ERB.new(template, nil, "-")
+  output   = message.result(binding)
+  File.open(outfile, 'w') { |f| f.write output }
+  puts "Generated: #{outfile}"
+end
