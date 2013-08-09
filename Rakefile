@@ -2,7 +2,10 @@
 #   Author:       Moses Mendoza
 #   Copyright:    Puppet Labs, 2013
 #   Description:  Rake tasks to load the packages.json file and call
-#                 packages-specific build tasks under their respective directories
+#                 packages-specific build tasks under their respective
+#                 directories. Each specific build is packaged into a .pkg
+#                 file, which is then packaged into a distribution. See
+#                 productbuild and pkgbuild manpages.
 
 RAKE_ROOT = File.dirname(__FILE__)
 PACKAGES  = File.join(RAKE_ROOT, 'packages.json')
@@ -16,9 +19,6 @@ require 'json'
 require 'digest'
 
 load File.join(RAKE_ROOT, 'utility_methods.rb')
-load File.join(RAKE_ROOT, "ruby", "build.rake")
-
-
 
 desc "Remove downloaded files"
 task :clean do
@@ -34,24 +34,31 @@ task :clobber => :clean do
   end
 end
 
-# Tasks for building the various components of the stack
+#   Tasks for building the various components of the stack. As they satisfy
+#   dependencies of each other, they are built in a specific order. We build up
+#   a dependency chain that we can't express through the abstracted rake tasks
 desc "Build All"
-task :all => :ruby
+task :all => [:clobber, :ruby]
 
-desc "Build ruby"
-task :ruby => [:tree, "ruby.info", "ruby:build", "ruby.pkg"]
+task :ruby => :libyaml
+
+["ruby", "libyaml"].each do |t|
+  load File.join(RAKE_ROOT, t, "build.rake")
+  desc "Build #{t}"
+  task t => [:tree, "#{t}.info", "#{t}:build", "#{t}.post"]
+end
 
 
-# description:  Load package-specific info into variables, retrieve and verify
-#               source. Instance variables such as @file are re-populated
-#               with different package info as we move from package to package
+#   Load package-specific info into variables, retrieve and verify
+#   source. Instance variables such as @file are re-populated
+#   with different package info as we move from package to package
 rule '.info' do |t|
   @name     = "#{t.name.split('.')[0]}"
   @info     = @packages[@name]
   @file     = @info["file"]
   @version  = @info["version"]
   @url      = @info["url"]
-  @md5      = @info["md5"] 
+  @md5      = @info["md5"]
 end
 
 task :source_setup => :verify do
@@ -70,10 +77,9 @@ task :retrieve do
   sh "wget #{@url} -P #{SOURCES}"
 end
 
-# description: This task sets up the directory tree structure that packagemaker
-#              needs to build a package. A prototype.plist file (holding
-#              package-specific options) is built from an ERB template located
-#              in the project directory
+#     This task sets up the directory tree structure that packagemaker needs to
+#     build a package. A prototype.plist file (holding package-specific
+#     options) is built from an ERB template located in the project directory
 task :tree => :setup do
   @working_tree  = {
      'scripts'   => "#{workdir}/scripts",
@@ -92,8 +98,8 @@ task :setup do
   @packages = JSON.load(File.read(PACKAGES))
 end
 
-# Generate the list that contains the original file structure. We use this
-# later to get the newly installed files.
+#   Generate the list that contains the original file structure. We use this
+#   later to get the newly installed files.
 rule '.list' do |t|
   sh %[ echo > bom/#{t.name};
     for i in #{PREFIX} #{CONFDIR};
@@ -102,19 +108,19 @@ rule '.list' do |t|
     done | sort >> bom/#{t.name}]
 end
 
-# Generate a list of files based on the difference between two file lists -
-# before build/install and after
+#   Generate a list of files based on the difference between two file lists -
+#   before build&install and after
 rule '.lst' => "#{@name}.post.list" do |t|
   sh %[comm -23 bom/#{t.name.sub('.lst','.post.list')} bom/#{t.name.sub('.lst','.pre.list')} > bom/#{t.name}]
 end
 
-# Create a tarball of the built files from the .lst
+#   Create a tarball of the built files from the .lst
 rule '.tar' => "#{@name}.lst" do |t|
   puts "Creating #{t.name}.gz"
   sh %[ #{TAR} -T bom/#{t.name.sub('.tar','.lst')} -czf #{File.join(workdir, "#{t.name}.gz")} ]
 end
 
-# Unpack the tarball into a root to package up
+#   Unpack the tarball into a root to package up
 rule '.root' => "#{@name}.tar" do |t|
   puts "Unpacking into #{workdir}/root"
   cd workdir do
@@ -122,8 +128,8 @@ rule '.root' => "#{@name}.tar" do |t|
   end
 end
 
-# Erb the Info.plist file from a generic template that contains the logic to
-# describe the package
+#   Erb the Info.plist file from a generic template that contains the logic to
+#   describe the package
 rule 'erb' => "#{@name}.root" do |t|
   puts "Generating Info.plist file"
   cd workdir do
@@ -131,7 +137,7 @@ rule 'erb' => "#{@name}.root" do |t|
   end
 end
 
-# Use pkgbuild to create the pkg file from the contents of the root
+#   Use pkgbuild to create the pkg file from the contents of the root
 rule 'pkg' => "#{@name}.erb" do |t|
   name = t.name.split('.')[0]
   cd workdir do
@@ -140,12 +146,17 @@ rule 'pkg' => "#{@name}.erb" do |t|
       --identifier com.puppetlabs.#{name} \
       --version #{@version} \
       --install-location / \
-      --ownership-preserve \
+      --ownership preserve \
       payload/#{name}.pkg ]
     cp File.join("payload","#{name}.pkg"), File.join(RAKE_ROOT,'pkg')
   end
 end
 
-task :post => :clean do |t|
+#   After the build of a specific pkg component is complete, remove the working
+#   directory, and then re-enable all Rake tasks to ensure we have a complete
+#   build chain
+rule 'post' => "#{@name}.pkg" do
   rm_rf workdir
+  @workdir = nil
+  ::Rake::Task.tasks.each {|t| t.reenable}
 end
