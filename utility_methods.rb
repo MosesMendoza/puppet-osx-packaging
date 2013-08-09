@@ -13,6 +13,7 @@ def untar(file, outdir=nil)
 end
 
 def erb(erbfile, outfile)
+  require 'erb'
   template = File.read(erbfile)
   message  = ERB.new(template, nil, "-")
   output   = message.result(binding)

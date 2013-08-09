@@ -1,7 +1,7 @@
 # Task to build ruby from source and package as a .pkg file
 
 namespace :ruby do
-  task :build => ["bom/ruby.pre.list", :setup] do
+  task :build => [:clobber, :info, "ruby.pre.list", :setup] do
     cd File.join(@workdir, "ruby-#{@version}") do
       sh "./configure --prefix=/opt/puppet"
       sh "make"
@@ -20,7 +20,7 @@ namespace :ruby do
     end
   end
 
-  task :retrieve => :info do
+  task :retrieve do
     rm_f File.join(SOURCES,@file)
     sh "wget #{@url} -P #{SOURCES}"
   end

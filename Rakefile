@@ -20,10 +20,17 @@ load File.join(RAKE_ROOT, "ruby", "build.rake")
 
 
 
-desc "Remove downloaded and built files"
+desc "Remove downloaded files"
 task :clean do
-  [PREFIX, CONFDIR, SOURCES, File.join(RAKE_ROOT, "bom")].each do |f|
+  [SOURCES, File.join(RAKE_ROOT, "bom")].each do |f|
     rm_rf Dir["#{f}/*"]
+  end
+end
+
+desc "Remove downloaded AND built files"
+task :clobber => :clean do
+  [PREFIX, CONFDIR].each do |f|
+    rm_rf f
   end
 end
 
@@ -32,7 +39,7 @@ desc "Build All"
 task :all => :ruby
 
 desc "Build ruby"
-task :ruby => [:tree, "ruby:build", "bom/ruby.post.list", "bom/ruby.lst", "ruby.tar", "ruby.root", "ruby.pkg"]
+task :ruby => [:tree, "ruby:build", "ruby.pkg"]
 
 # description: This task sets up the directory tree structure that packagemaker
 #              needs to build a package. A prototype.plist file (holding
@@ -56,53 +63,60 @@ task :setup do
   @packages = JSON.load(File.read(PACKAGES))
 end
 
-namespace :bom do
-  # Generate the list that contains the original file structure. We use this later to
-  # get the newly installed files.
-  rule '.list' do |t|
-    sh %[ echo > #{t.name};
-      for i in #{PREFIX} #{CONFDIR};
-      do
-        [ -d $i ] && find $i \\! -type d -print;
-      done | sort >> #{t.name}]
-  end
+# Generate the list that contains the original file structure. We use this
+# later to get the newly installed files.
+rule '.list' do |t|
+  sh %[ echo > bom/#{t.name};
+    for i in #{PREFIX} #{CONFDIR};
+    do
+      [ -d $i ] && find $i \\! -type d -print;
+    done | sort >> bom/#{t.name}]
+end
 
-  rule '.lst' do |t|
-    sh %[comm -23 #{t.name.sub('.lst','.post.list')} #{t.name.sub('.lst','.pre.list')} > #{t.name}]
-  end
-
+# Generate a list of files based on the difference between two file lists -
+# before build/install and after
+rule '.lst' => "#{@name}.post.list" do |t|
+  sh %[comm -23 bom/#{t.name.sub('.lst','.post.list')} bom/#{t.name.sub('.lst','.pre.list')} > bom/#{t.name}]
 end
 
 # Create a tarball of the built files from the .lst
-rule '.tar' do |t|
+rule '.tar' => "#{@name}.lst" do |t|
   puts "Creating #{t.name}.gz"
   sh %[ #{TAR} -T bom/#{t.name.sub('.tar','.lst')} -czf #{File.join(workdir, "#{t.name}.gz")} ]
 end
 
 # Unpack the tarball into a root to package up
-rule '.root' do |t|
+rule '.root' => "#{@name}.tar" do |t|
   puts "Unpacking into #{workdir}/root"
   cd workdir do
     sh %[ #{TAR} -xzf #{t.name.sub('.root','.tar.gz')} -C root ]
   end
 end
 
-rule 'erb' do |t|
+# Erb the Info.plist file from a generic template that contains the logic to
+# describe the package
+rule 'erb' => "#{@name}.root" do |t|
   puts "Generating Info.plist file"
   cd workdir do
     erb(File.join(RAKE_ROOT, 'prototype.plist.erb'), 'prototype.plist')
   end
 end
 
-rule 'pkg' do |t|
+# Use pkgbuild to create the pkg file from the contents of the root
+rule 'pkg' => "#{@name}.erb" do |t|
   name = t.name.split('.')[0]
   cd workdir do
-    sh %[ sudo #{PKGBUILD} --root root \
+    sh %[ #{PKGBUILD} --root root \
       --scripts scripts \
       --identifier com.puppetlabs.#{name} \
       --version #{@version} \
       --install-location / \
       --ownership-preserve \
       payload/#{name}.pkg ]
+    cp "payload/#{name}.pkg", RAKE_ROOT
   end
+end
+
+task :post => :clean do |t|
+  rm_rf workdir
 end
