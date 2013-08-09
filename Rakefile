@@ -39,7 +39,36 @@ desc "Build All"
 task :all => :ruby
 
 desc "Build ruby"
-task :ruby => [:tree, "ruby:build", "ruby.pkg"]
+task :ruby => [:tree, "ruby.info", "ruby:build", "ruby.pkg"]
+
+
+# description:  Load package-specific info into variables, retrieve and verify
+#               source. Instance variables such as @file are re-populated
+#               with different package info as we move from package to package
+rule '.info' do |t|
+  @name     = "#{t.name.split('.')[0]}"
+  @info     = @packages[@name]
+  @file     = @info["file"]
+  @version  = @info["version"]
+  @url      = @info["url"]
+  @md5      = @info["md5"] 
+end
+
+task :source_setup => :verify do
+  cp(File.join(SOURCES,@file), @workdir)
+  untar(File.join(@workdir,@file), @workdir)
+end
+
+task :verify => :retrieve do
+  unless @md5.to_sym == Digest::MD5.file(File.join(SOURCES,@file)).hexdigest.to_sym
+    fail "Sums don't match for #{@file}"
+  end
+end
+
+task :retrieve do
+  rm_f File.join(SOURCES,@file)
+  sh "wget #{@url} -P #{SOURCES}"
+end
 
 # description: This task sets up the directory tree structure that packagemaker
 #              needs to build a package. A prototype.plist file (holding
