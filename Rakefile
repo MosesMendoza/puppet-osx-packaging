@@ -1,4 +1,4 @@
-#   Title:        OS-X Packaging
+#   Title:        OSX-Packaging
 #   Author:       Moses Mendoza
 #   Copyright:    Puppet Labs, 2013
 #   Description:  Rake tasks to load the packages.json file and call
