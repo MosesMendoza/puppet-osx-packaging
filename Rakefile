@@ -113,7 +113,7 @@ rule 'pkg' => "#{@name}.erb" do |t|
       --install-location / \
       --ownership-preserve \
       payload/#{name}.pkg ]
-    cp "payload/#{name}.pkg", RAKE_ROOT
+    cp File.join("payload","#{name}.pkg"), File.join(RAKE_ROOT,'pkg')
   end
 end
 
