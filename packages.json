@@ -16,7 +16,7 @@
   "facter": {
     "version": "1.7.2",
     "file": "facter-1.7.2.tar.gz",
-    "url": "http://downloads.puppetlabs.com/facter-1.7.2.tar.gz",
+    "url": "http://downloads.puppetlabs.com/facter/facter-1.7.2.tar.gz",
     "md5": "1149d4e1f5c30b23c95ca71171cf9d94",
     "release": "1"
   }
