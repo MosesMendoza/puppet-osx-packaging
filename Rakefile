@@ -32,7 +32,7 @@ end
 
 desc "Remove downloaded AND built files"
 task :clobber => :clean do
-  [PREFIX, CONFDIR].each do |f|
+  [PREFIX, CONFDIR, Dir["pkg/*"]].each do |f|
     rm_rf f
   end
 end
