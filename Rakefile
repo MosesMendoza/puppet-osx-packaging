@@ -12,6 +12,8 @@ PACKAGES  = File.join(RAKE_ROOT, 'packages.json')
 SOURCES   = File.join(RAKE_ROOT, "sources")
 PREFIX    = "/opt/puppet"
 CONFDIR   = "/etc/puppetlabs"
+BINDIR    = "#{PREFIX}/bin"
+RUBY      = "#{BINDIR}/ruby"
 TAR       = %x{which tar}.chomp
 PKGBUILD  = %x{which pkgbuild}.chomp
 
@@ -38,11 +40,13 @@ end
 #   dependencies of each other, they are built in a specific order. We build up
 #   a dependency chain that we can't express through the abstracted rake tasks
 desc "Build All"
-task :all => [:clobber, :ruby]
+task :all => [:clobber, :facter]
+
+task :facter => :ruby
 
 task :ruby => :libyaml
 
-["ruby", "libyaml"].each do |t|
+["facter", "ruby", "libyaml"].each do |t|
   load File.join(RAKE_ROOT, t, "build.rake")
   desc "Build #{t}"
   task t => [:tree, "#{t}.info", "#{t}:build", "#{t}.post"]
@@ -50,8 +54,8 @@ end
 
 
 #   Load package-specific info into variables, retrieve and verify
-#   source. Instance variables such as @file are re-populated
-#   with different package info as we move from package to package
+#   source. Instance variables such as @file are re-populated with different
+#   package info as we move from package to package along the dependency chain
 rule '.info' do |t|
   @name     = "#{t.name.split('.')[0]}"
   @info     = @packages[@name]
@@ -61,7 +65,9 @@ rule '.info' do |t|
   @md5      = @info["md5"]
 end
 
-task :source_setup => :verify do
+#   Retrieve, verify, and unpack the source for the project
+
+task :source => :verify do
   cp(File.join(SOURCES,@file), @workdir)
   untar(File.join(@workdir,@file), @workdir)
 end
@@ -92,14 +98,16 @@ task :tree => :setup do
   end
 end
 
-
+#     Create the temporary base directory which will serve as the root for all
+#     of the packaging operations
 task :setup do
   mkdir_p workdir
   @packages = JSON.load(File.read(PACKAGES))
 end
 
-#   Generate the list that contains the original file structure. We use this
-#   later to get the newly installed files.
+#   Generate the file list that contains the original file structure, before
+#   installing a package. We diff this later to get a list of the newly
+#   installed files.
 rule '.list' do |t|
   sh %[ echo > bom/#{t.name};
     for i in #{PREFIX} #{CONFDIR};
@@ -109,7 +117,7 @@ rule '.list' do |t|
 end
 
 #   Generate a list of files based on the difference between two file lists -
-#   before build&install and after
+#   before build/install and afterwards
 rule '.lst' => "#{@name}.post.list" do |t|
   sh %[comm -23 bom/#{t.name.sub('.lst','.post.list')} bom/#{t.name.sub('.lst','.pre.list')} > bom/#{t.name}]
 end
