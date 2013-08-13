@@ -61,6 +61,7 @@ rule '.info' do |t|
   @info     = @packages[@name]
   @file     = @info["file"]
   @version  = @info["version"]
+  @release  = @info["release"]
   @url      = @info["url"]
   @md5      = @info["md5"]
 end
