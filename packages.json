@@ -19,5 +19,12 @@
     "url": "http://downloads.puppetlabs.com/facter/facter-1.7.2.tar.gz",
     "md5": "1149d4e1f5c30b23c95ca71171cf9d94",
     "release": "1"
+  },
+  "ruby-rgen": {
+    "version": "0.6.2",
+    "file": "ruby-rgen-0.6.2.tar.gz",
+    "url": "http://neptune.puppetlabs.lan/sources/ruby-rgen-0.6.2.tar.gz",
+    "md5": "693c33ce411d999c27d40bd9b064811c",
+    "release": "1"
   }
 }

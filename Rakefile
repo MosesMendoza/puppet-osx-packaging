@@ -40,13 +40,16 @@ end
 #   dependencies of each other, they are built in a specific order. We build up
 #   a dependency chain that we can't express through the abstracted rake tasks
 desc "Build All"
-task :all => [:clobber, :facter]
+task :all    => [:clobber, :'ruby-rgen']
+
+task :'ruby-rgen'   => :facter
 
 task :facter => :ruby
 
-task :ruby => :libyaml
+task :ruby   => :libyaml
 
-["facter", "ruby", "libyaml"].each do |t|
+
+["ruby-rgen", "facter", "ruby", "libyaml"].each do |t|
   load File.join(RAKE_ROOT, t, "build.rake")
   desc "Build #{t}"
   task t => [:tree, "#{t}.info", "#{t}:build", "#{t}.post"]
