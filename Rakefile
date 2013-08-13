@@ -7,15 +7,16 @@
 #                 file, which is then packaged into a distribution. See
 #                 productbuild and pkgbuild manpages.
 
-RAKE_ROOT = File.dirname(__FILE__)
-PACKAGES  = File.join(RAKE_ROOT, 'packages.json')
-SOURCES   = File.join(RAKE_ROOT, "sources")
-PREFIX    = "/opt/puppet"
-CONFDIR   = "/etc/puppetlabs"
-BINDIR    = "#{PREFIX}/bin"
-RUBY      = "#{BINDIR}/ruby"
-TAR       = %x{which tar}.chomp
-PKGBUILD  = %x{which pkgbuild}.chomp
+RAKE_ROOT    = File.dirname(__FILE__)
+PACKAGES     = File.join(RAKE_ROOT, 'packages.json')
+SOURCES      = File.join(RAKE_ROOT, "sources")
+PREFIX       = "/opt/puppet"
+CONFDIR      = "/etc/puppetlabs"
+BINDIR       = "#{PREFIX}/bin"
+RUBY         = "#{BINDIR}/ruby"
+TAR          = %x{which tar}.chomp
+PKGBUILD     = %x{which pkgbuild}.chomp
+PRODUCTBUILD = %x{which productbuild}.chomp
 
 require 'json'
 require 'digest'
@@ -40,13 +41,25 @@ end
 #   dependencies of each other, they are built in a specific order. We build up
 #   a dependency chain that we can't express through the abstracted rake tasks
 desc "Build All"
-task :all    => [:clobber, :'ruby-rgen']
+task :all         => [:clobber, :dist]
 
-task :'ruby-rgen'   => :facter
+task :dist        => 'ruby-rgen'
 
-task :facter => :ruby
+task :'ruby-rgen' => :facter
 
-task :ruby   => :libyaml
+task :facter      => :ruby
+
+task :ruby        => :libyaml
+
+#  Compose all of the component packages into an Apple Product Distribution
+#  see `man productbuild`
+desc "Compose component packages into a PuppetEnterprise.pkg"
+task :dist do
+  cd "pkg" do
+    packages = Dir["*.pkg"].map{|p| "--package #{p}"}.join(" ")
+    sh "#{PRODUCTBUILD} #{packages} PuppetEnterprise.pkg"
+  end
+end
 
 
 ["ruby-rgen", "facter", "ruby", "libyaml"].each do |t|
