@@ -26,5 +26,12 @@
     "url": "http://neptune.puppetlabs.lan/sources/ruby-rgen-0.6.2.tar.gz",
     "md5": "693c33ce411d999c27d40bd9b064811c",
     "release": "1"
+  },
+  "pe-puppet": {
+    "version": "3.2.2",
+    "file": "pe-puppet-3.2.2-pe2.tar.gz",
+    "url": "http://neptune.puppetlabs.lan/sources/pe-puppet-3.2.2-pe2.tar.gz",
+    "md5": "7bfe249b64b876d6c870f23f51f5bd53",
+    "release": "pe2"
   }
 }

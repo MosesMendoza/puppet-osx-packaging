@@ -13,6 +13,7 @@ SOURCES      = File.join(RAKE_ROOT, "sources")
 PREFIX       = "/opt/puppet"
 CONFDIR      = "/etc/puppetlabs"
 BINDIR       = "#{PREFIX}/bin"
+DATADIR      = "#{PREFIX}/share"
 RUBY         = "#{BINDIR}/ruby"
 TAR          = %x{which tar}.chomp
 PKGBUILD     = %x{which pkgbuild}.chomp
@@ -43,7 +44,9 @@ end
 desc "Build All"
 task :all         => [:clobber, :dist]
 
-task :dist        => 'ruby-rgen'
+task :dist        => :'pe-puppet'
+
+task :'pe-puppet' => 'ruby-rgen'
 
 task :'ruby-rgen' => :facter
 
@@ -62,7 +65,7 @@ task :dist do
 end
 
 
-["ruby-rgen", "facter", "ruby", "libyaml"].each do |t|
+["pe-puppet", "ruby-rgen", "facter", "ruby", "libyaml"].each do |t|
   load File.join(RAKE_ROOT, t, "build.rake")
   desc "Build #{t}"
   task t => [:tree, "#{t}.info", "#{t}:build", "#{t}.post"]
