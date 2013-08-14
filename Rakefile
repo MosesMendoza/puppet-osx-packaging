@@ -167,16 +167,15 @@ end
 
 #   Use pkgbuild to create the pkg file from the contents of the root
 rule 'pkg' => "#{@name}.erb" do |t|
-  name = t.name.split('.')[0]
   cd workdir do
     sh %[ #{PKGBUILD} --root root \
       --scripts scripts \
-      --identifier com.puppetlabs.#{name} \
-      --version #{@version} \
+      --identifier com.puppetlabs.#{@name} \
+      --version #{@version}-#{@release} \
       --install-location / \
       --ownership preserve \
-      payload/#{name}.pkg ]
-    cp File.join("payload","#{name}.pkg"), File.join(RAKE_ROOT,'pkg')
+      payload/#{@name}-#{@version}-#{@release}.pkg ]
+    cp File.join("payload","#{@name}-#{@version}-#{@release}.pkg"), File.join(RAKE_ROOT,'pkg')
   end
 end
 
