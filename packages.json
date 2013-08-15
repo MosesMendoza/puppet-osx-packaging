@@ -40,5 +40,12 @@
     "url": "http://neptune.puppetlabs.lan/sources/stomp-1.2.9.tar.gz",
     "md5": "6bc97daafeae143816f9999a189cb5dc",
     "release": "1"
+  },
+  "mcollective": {
+    "version": "2.2.4",
+    "file": "mcollective-2.2.4.tgz",
+    "url": "http://downloads.puppetlabs.com/mcollective/mcollective-2.2.4.t",
+    "md5": "e66e42d4d97f089e5f4a003da802776f",
+    "release": "1"
   }
 }
