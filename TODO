@@ -5,3 +5,5 @@ Set ownership to root:wheel before pkging up files
 Add launchd plist for pe-puppet and mco
 
 Explore asking questions in installer.pkg
+
+Add patch capabilities
