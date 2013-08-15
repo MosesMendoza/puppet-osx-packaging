@@ -44,7 +44,9 @@ end
 desc "Build All"
 task :all         => [:clobber, :dist]
 
-task :dist        => :'pe-puppet'
+task :dist        => :stomp
+
+task :stomp       => :'pe-puppet'
 
 task :'pe-puppet' => 'ruby-rgen'
 
@@ -65,7 +67,7 @@ task :dist do
 end
 
 
-["pe-puppet", "ruby-rgen", "facter", "ruby", "libyaml"].each do |t|
+["stomp", "pe-puppet", "ruby-rgen", "facter", "ruby", "libyaml"].each do |t|
   load File.join(RAKE_ROOT, t, "build.rake")
   desc "Build #{t}"
   task t => [:tree, "#{t}.info", "#{t}:build", "#{t}.post"]
