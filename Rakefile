@@ -105,7 +105,9 @@ end
 
 task :retrieve do
   rm_f File.join(SOURCES,@file)
-  sh "wget #{@url} -P #{SOURCES}"
+  cd SOURCES do
+    sh "curl -O #{@url}"
+  end
 end
 
 #     This task sets up the directory tree structure that packagemaker needs to
