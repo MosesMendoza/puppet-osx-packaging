@@ -19,6 +19,7 @@ TAR          = %x{which tar}.chomp
 PKGBUILD     = %x{which pkgbuild}.chomp
 PRODUCTBUILD = %x{which productbuild}.chomp
 
+require 'rubygems'
 require 'json'
 require 'digest'
 
